@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Ticket App</title>
+    <link rel="stylesheet" href="/styles.css"> 
+</head>
+<body>
+    <!-- Barra Superior -->
+    <div class="top-bar">
+        <img src="assets/bus-banner.png" alt="Bus Banner" class="bus-banner">
+    </div>
+    	
+    <div id="app">
+        <!-- Contenedor de Autenticación -->
+        <div id="auth-container">
+            <h1>Bus Ticket: Reservas</h1>
+            <div id="auth-form">
+                <input type="text" id="username" placeholder="Username" required>
+                <input type="email" id="email" placeholder="Email" required>
+                <input type="password" id="password" placeholder="Password" required>
+                <button onclick="register()">Registrar usuario</button>
+                <button onclick="login()">Login</button>
+            </div>
+            <div id="message"></div>
+        </div>
+
+        <!-- Selección de Ruta -->
+        <div id="route-selection" style="display: none;">
+            <h2>Selección de ruta y fecha</h2>
+            <select id="route"></select>
+            <input type="date" id="travel-date">
+            <button onclick="checkAvailability()">Disponibilidad</button>
+			<div id="loading" style="display: none;">Procesando el pago...</div> <!-- Spinner -->
+        </div>
+
+        <!-- Selección de Asiento -->
+        <div id="seat-selection" style="display: none;">
+            <h2>Selecciona el asiento</h2>
+            <div id="seat-map"></div>
+			<div id="price-display">Total: €0</div> <!-- Nuevo elemento -->
+            <button onclick="confirmPayment()">Pagar AHORA</button>
+        </div>
+    </div> <!-- Cierre correcto de #app -->
+    <script src="/script.js"></script> 
+</body>
+</html>

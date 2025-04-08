@@ -1,0 +1,122 @@
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+/* Estilos para la barra superior */
+.top-bar {
+    width: 50%;
+    background-color: #333;
+    padding: 10px 0;
+    text-align: center;
+}
+
+.bus-banner {
+    max-width: 100%;
+    height: auto;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f9;
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+#app {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 600px;
+    text-align: center;
+}
+#price-display {
+    margin: 1rem 0;
+    font-size: 1.2rem;
+    color: #4a90e2;
+    font-weight: bold;
+}
+#loading {
+    margin: 1rem 0;
+    color: #4a90e2;
+    font-weight: bold;
+    display: none;
+}
+h1 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: #4a90e2;
+}
+
+input {
+    width: 100%;
+    padding: 0.8rem;
+    margin: 0.5rem 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+button {
+    width: 100%;
+    padding: 0.8rem;
+    margin: 0.5rem 0;
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #357ab8;
+}
+#seat-map {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr); /* 10 columnas */
+    gap: 8px; /* Reduce el espacio entre asientos */
+    margin: 20px 0;
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+}
+
+.seat {
+    width: 35px; /* Reduce el tamaño del asiento */
+    height: 35px;
+    font-size: 0.8rem;
+    background-color: #4CAF50;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+}
+
+.seat.reserved {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.seat.selected {
+    background-color: #ff0000;
+}
+@media (max-width: 600px) {
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    input, button {
+        font-size: 0.9rem;
+    }
+}
