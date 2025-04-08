@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # Servicio de Nginx (Proxy Inverso + Frontend)
   proxy:
-    image: bus-ticket-app-proxy
+    image: busapp-proxy
     deploy:
       replicas: 3  
       restart_policy:
@@ -23,7 +23,7 @@ services:
       - route-scheduler
 
   user-auth:
-    image: bus-ticket-app-user-auth
+    image: busapp-user-auth
     deploy:
       replicas: 1
       restart_policy:
@@ -32,7 +32,7 @@ services:
       - red-overlay
 
   bus-reservation:
-    image: bus-ticket-app-bus-reservation
+    image: busapp-bus-reservation
     deploy:
       replicas: 1
       restart_policy:
@@ -41,7 +41,7 @@ services:
       - red-overlay
 
   payment-gateway:
-    image: bus-ticket-app-payment-gateway
+    image: busapp-payment-gateway
     deploy:
       replicas: 1
       restart_policy:
@@ -50,7 +50,7 @@ services:
       - red-overlay
 
   route-scheduler:
-    image: bus-ticket-app-route-scheduler
+    image: busapp-route-scheduler
     deploy:
       replicas: 1
       restart_policy:
