@@ -1,17 +1,6 @@
 version: '3.8'
 
 services:
-  # Servicio de Nginx (Proxy Inverso + Frontend)
-  proxy:
-    image: busapp-proxy
-    deploy:
-      replicas: 3  
-      restart_policy:
-        condition: on-failure
-      resources:
-        version: '3.8'
-
-services:
   proxy:
     image: busapp-proxy
     deploy:
@@ -83,55 +72,3 @@ services:
 networks:
   red-overlay:
     driver: overlay
-:
-          cpus: '0.5'  
-          memory: 256M  
-    ports:
-      - "80:80"  
-    networks:
-      - red-overlay
-    depends_on:
-      - user-auth
-      - bus-reservation
-      - payment-gateway
-      - route-scheduler
-
-  user-auth:
-    image: busapp-user-auth
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-    networks:
-      - red-overlay
-
-  bus-reservation:
-    image: busapp-bus-reservation
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-    networks:
-      - red-overlay
-
-  payment-gateway:
-    image: busapp-payment-gateway
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-    networks:
-      - red-overlay
-
-  route-scheduler:
-    image: busapp-route-scheduler
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: on-failure
-    networks:
-      - red-overlay
-
-networks:
-  red-overlay:
-    driver: overlay  
