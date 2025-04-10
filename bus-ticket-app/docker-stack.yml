@@ -69,6 +69,38 @@ services:
     networks:
       - red-overlay
 
+  prometheus:
+    image: busapp-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - prometheus_data:/prometheus
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - red-overlay
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      # No constraints → puede ir en cualquier nodo
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+    networks:
+      - red-overlay
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+      # También sin constraints
+
 networks:
   red-overlay:
     driver: overlay
+
+volumes:
+  prometheus_data:

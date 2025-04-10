@@ -1,8 +1,9 @@
+version: '3.8'
 services:
   # Servicio de Nginx (Proxy Inverso + Frontend)
   proxy:
     build:
-      context: .                # Contexto raíz para acceder al frontend
+      context: .
       dockerfile: proxy/Dockerfile
     ports:
       - "80:80"  # Accesible desde el host en http://localhost
@@ -20,14 +21,14 @@ services:
       - "5001:5001"
     networks:
       - app-network
-      
+
   bus-reservation:
     build: ./microservices/bus-reservation
     ports:
       - "5002:5002"
     networks:
       - app-network
-      
+
   payment-gateway:
     build: ./microservices/payment-gateway
     ports:
@@ -41,7 +42,25 @@ services:
       - "5004:5004"
     networks:
       - app-network
-      
+
+  prometheus:
+    build: ./prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - app-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true # Habilita el acceso anónimo (para pruebas)
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

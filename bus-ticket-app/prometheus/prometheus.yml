@@ -1,0 +1,51 @@
+global:
+  scrape_interval:     15s # Scrape targets every 15 seconds.
+  evaluation_interval: 15s # Evaluate rules every 15 seconds.
+  # scrape_timeout is set to the global default (10s).
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      # - alertmanager:9093
+
+# Load rules once and periodically evaluate them according to the global 'evaluation_interval'.
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+# A scrape configuration containing exactly one endpoint to scrape:
+# Here it's Prometheus itself.
+scrape_configs:
+  # Job to scrape Prometheus itself:
+  - job_name: 'prometheus'
+    # metrics_path defaults to '/metrics'
+    # scheme defaults to 'http'.
+
+    static_configs:
+    - targets: ['prometheus:9090']
+
+  # Job to scrape user-auth metrics
+  - job_name: 'user-auth'
+    static_configs:
+      - targets: ['proxy:80']
+    metrics_path: /metrics/auth
+
+  # Job to scrape bus-reservation metrics
+  - job_name: 'bus-reservation'
+    static_configs:
+      - targets: ['proxy:80']
+    metrics_path: /metrics/reservation
+
+  # Job to scrape payment-gateway metrics
+  - job_name: 'payment-gateway'
+    static_configs:
+      - targets: ['proxy:80']
+    metrics_path: /metrics/payment
+
+  # Job to scrape route-scheduler metrics
+  - job_name: 'route-scheduler'
+    static_configs:
+      - targets: ['proxy:80']
+    metrics_path: /metrics/routes
