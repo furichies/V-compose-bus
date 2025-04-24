@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Ticket App - Dashboard</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="top-bar">
+        <img src="assets/bus-bannerc.png" alt="Bus Banner" class="bus-banner">
+    </div>
+
+    <div id="app">
+        <div class="dashboard-container">
+
+            <aside class="sidebar">
+                <h2>Menú</h2>
+                <ul>
+                    <li><a href="#" data-section="user-info-section">Info del usuario</a></li> <li><a href="#" data-section="route-selection">Seleccionar ruta</a></li>
+                    <li><a href="#" data-section="reservations-section">Mis reservas</a></li> <li><a href="#" id="logout-link">Cerrar Sesión</a></li>
+                </ul>
+            </aside>
+
+			<main class="main-content">
+                <div id="user-info-section" class="content-section" style="display: none;">
+                    <h2>Información del Usuario</h2>
+                    <p><strong>Nombre de usuario:</strong> <span id="user-info-username">Cargando...</span></p>
+                    <p><strong>Email:</strong> <span id="user-info-email">Cargando...</span></p>
+                    <p><strong>Token de acceso:</strong> <span id="user-info-token">No disponible</span></p> 
+                </div>
+
+                <div id="route-selection" class="content-section"> 
+                     <h2>Selección de ruta y fecha</h2>
+                    <select id="route"></select>
+                    <input type="date" id="travel-date">
+                    
+                    <select id="schedule" style="display: none;"> 
+                        <option value="">Selecciona un horario</option>
+                    </select>
+                    
+                    <button onclick="checkAvailability()">Disponibilidad</button>
+                    <div id="loading" style="display: none;">Cargando rutas...</div>
+                </div>
+
+                <div id="seat-selection" class="content-section" style="display: none;">
+                    <h2>Selecciona el asiento</h2>
+                    <div id="seat-map"></div>
+                    <div id="price-display">Total: €0</div>
+                    <button onclick="confirmPayment()">Pagar AHORA</button>
+                    <div id="loading-payment" style="display: none;">Procesando el pago...</div> 
+                </div>
+
+                 <div id="reservations-section" class="content-section" style="display: none;">
+                    <h2>Mis Reservas</h2>
+                    <p>Aquí se listarán las reservas del usuario.</p>
+                </div>
+
+
+            </main>
+        </div> <div id="custom-message" class="custom-message"></div>
+
+    </div> <script src="/script.js"></script>
+</body>
+</html>

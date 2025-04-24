@@ -23,24 +23,24 @@ body {
     background-color: #f4f4f9;
     color: #333;
     display: flex;
-    flex-direction: column; /* Añadir esta línea para apilar elementos */
-    /* justify-content: center;  Eliminar o comentar */
-    /* align-items: center;      Eliminar o comentar */
-    /* height: 100vh;            Eliminar o comentar */
+    flex-direction: column; /* Mantener: apila el banner y el contenido */
+    width: 100%; /* Asegura que el body ocupa el 100% del ancho de la ventana */
+    min-height: 100vh; /* Añadir: asegura que el body tenga al menos la altura de la ventana */
     margin: 0;
 }
-
+/*
 #app {
-    background: #ffffff;
-    padding: 2rem;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex-grow: 1; 
     width: 100%;
-    max-width: 600px;
-    text-align: center;
-    margin: 0 auto; 
-
+    max-width: 100%; 
+    margin: 0; 
+    padding: 0;
+    box-shadow: none;
+    background: none;
+    text-align: left; 
 }
+*/
+
 #price-display {
     margin: 1rem 0;
     font-size: 1.2rem;
@@ -130,7 +130,7 @@ button:hover {
     bottom: 40px; /* A 20px del borde inferior */
     left: 50%; /* Centrado horizontalmente */
     transform: translateX(-50%); /* Ajuste para centrar exactamente */
-    background-color: #4CAF50; /* Color de fondo (azul de tu tema) */
+    background-color: #4a90e2; /* Color de fondo (azul de tu tema) */
     color: white; /* Color del texto */
     padding: 15px 20px; /* Espaciado interno */
     border-radius: 8px; /* Bordes redondeados */
@@ -152,8 +152,128 @@ button:hover {
     background-color: #4CAF50; /* Verde */
 }
 
+/* Estilos para la estructura del Dashboard */
+/* Estilos para la estructura del Dashboard */
+.dashboard-container {
+    display: flex; /* Mantener: Usar flexbox para la barra lateral y el contenido */
+    width: 100%;
+    /*max-width: none;  Eliminar o cambiar a none/100% para permitir que se expanda */
+    max-width: 1400px;  /* O puedes poner un max-width más grande si no quieres que ocupe el 100% en pantallas muy grandes */
+    margin: 20px 0; /* Centrar el contenedor del dashboard con margen superior/inferior */
+    /* Si quieres que ocupe el 100% del ancho, puedes quitar el auto margin y añadir padding */
+    /* margin: 20px 0; */ /* Ejemplo sin margen auto */
+    padding: 0 20px; /* Ejemplo: añadir padding horizontal si quitas margin auto */
+
+    background-color: #fff; /* Fondo blanco para el contenedor */
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    overflow: hidden; /* Asegura que los bordes redondeados se apliquen correctamente */
+    flex-grow: 1; /* Añadir: Permite que el dashboard-container ocupe el espacio vertical restante DENTRO de #app */
+}
+
+.sidebar {
+    width: 200px; /* Ancho de la barra lateral */
+    background-color: #4a90e2; /* Color de fondo de la barra lateral (azul de tu tema) */
+    color: white;
+    padding: 20px;
+    flex-shrink: 0; /* Evita que la barra lateral se encoja */
+}
+
+.sidebar h2 {
+    color: white; /* Asegura que el título del menú sea blanco */
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    text-align: center;
+}
+
+.sidebar ul {
+    list-style: none; /* Eliminar los puntos de la lista */
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar li {
+    margin-bottom: 15px; /* Espacio entre elementos del menú */
+}
+
+.sidebar a {
+    color: white; /* Color de los enlaces */
+    text-decoration: none; /* Eliminar subrayado */
+    font-size: 1.1rem;
+    display: block; /* Hacer que todo el área del li sea clickable */
+    padding: 5px 0; /* Espaciado dentro de los enlaces */
+    transition: color 0.2s ease;
+}
+
+.sidebar a:hover {
+    color: #f0f0f0; /* Color al pasar el ratón */
+}
+
+.main-content {
+    flex-grow: 1; /* Permite que el contenido principal ocupe el espacio restante */
+    padding: 20px;
+}
+
+/* Estilos para las secciones de contenido - inicialmente todas ocultas excepto la que quieras mostrar al cargar */
+.content-section {
+    display: none; /* Ocultar por defecto todas las secciones de contenido */
+}
+
+/* Puedes añadir una clase para la sección activa, o manejar la visibilidad con JS */
+/*
+.content-section.active {
+    display: block;
+}
+*/
+
+/* Ajuste para que el #app no centre todo el contenido dentro de él */
+#app {
+        width: 100%;
+        max-width: 100%; /* Permitir que el .dashboard-container defina el ancho máximo */
+        margin: 0; /* Eliminar margen auto aquí */
+        padding: 0; /* Eliminar padding aquí */
+        background: #ffffff; /* Mantener si quieres el fondo blanco */
+     	border-radius: 10px; /* Mantener si quieres bordes redondeados exteriores */
+        box-shadow: none; /* Eliminar sombra aquí */
+        background: none; /* Eliminar fondo aquí */
+        text-align: left; /* Alinear texto a la izquierda por defecto en el contenido principal */
 
 
+}
+
+/* Asegúrate de que los estilos del banner y top-bar sigan funcionando correctamente fuera del #app */
+
+/* Estilos específicos para la página de Login/Registro (index.html) */
+.login-page #app {
+    /* Sobrescribir los estilos generales de #app para la página de login */
+    flex-grow: 0; /* No permitir que crezca verticalmente */
+    width: 100%;
+    max-width: 400px; /* Un ancho máximo menor para el formulario de login, ajusta si quieres */
+    margin: 50px auto; /* Centrar horizontalmente y añadir margen arriba/abajo */
+    padding: 2rem; /* Espaciado interno */
+
+    /* Restablecer los estilos de apariencia que quitamos del #app general */
+    background: #ffffff; /* Fondo blanco */
+    border-radius: 10px; /* Bordes redondeados */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra */
+
+    text-align: center; /* Centrar texto e inline-block dentro del formulario */
+    height: auto; /* Permitir que la altura se ajuste al contenido */
+}
+
+/* Opcional: Ajustar el ancho de los botones en la página de login si quieres que no ocupen el 100% del contenedor reducido */
+.login-page #auth-form button {
+    /* Puedes ajustar el width aquí si quieres que los botones sean más estrechos que el 100% del contenedor de login */
+    /* width: 80%; */ /* Ejemplo: botones al 80% del ancho del contenedor del formulario */
+    /* margin: 0.5rem auto; */ /* Si ajustas el width, puedes centrar los botones */
+}
+
+/* Opcional: Ajustar el ancho de los inputs en la página de login */
+.login-page #auth-form input {
+    /* width: 90%; */ /* Ejemplo: inputs al 90% */
+    /* margin: 0.5rem auto; */ /* Si ajustas el width, puedes centrar los inputs */
+}
 
 
 
