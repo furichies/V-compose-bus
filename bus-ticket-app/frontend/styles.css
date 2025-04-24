@@ -6,15 +6,16 @@
 }
 /* Estilos para la barra superior */
 .top-bar {
-    width: 50%;
-    background-color: #333;
+    width: 100%; /* Cambiar a 100% */
+    background-color: #f4f4f9;
     padding: 10px 0;
     text-align: center;
 }
 
 .bus-banner {
     max-width: 100%;
-    height: auto;
+    height: auto; /* Mantener para conservar la proporción */
+    max-height: 20vh; /* Añadir esta línea para limitar la altura */
 }
 
 body {
@@ -22,9 +23,10 @@ body {
     background-color: #f4f4f9;
     color: #333;
     display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+    flex-direction: column; /* Añadir esta línea para apilar elementos */
+    /* justify-content: center;  Eliminar o comentar */
+    /* align-items: center;      Eliminar o comentar */
+    /* height: 100vh;            Eliminar o comentar */
     margin: 0;
 }
 
@@ -36,6 +38,8 @@ body {
     width: 100%;
     max-width: 600px;
     text-align: center;
+    margin: 0 auto; 
+
 }
 #price-display {
     margin: 1rem 0;
@@ -120,3 +124,37 @@ button:hover {
         font-size: 0.9rem;
     }
 }
+/* Estilos para el aviso personalizado */
+.custom-message {
+    position: fixed; /* Posición fija en la ventana */
+    bottom: 40px; /* A 20px del borde inferior */
+    left: 50%; /* Centrado horizontalmente */
+    transform: translateX(-50%); /* Ajuste para centrar exactamente */
+    background-color: #4CAF50; /* Color de fondo (azul de tu tema) */
+    color: white; /* Color del texto */
+    padding: 15px 20px; /* Espaciado interno */
+    border-radius: 8px; /* Bordes redondeados */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2); /* Sombra sutil */
+    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+    opacity: 0; /* Inicialmente invisible */
+    visibility: hidden; /* Inicialmente no interactuable */
+    transition: opacity 0.5s ease-in-out, visibility 0.5s ease-in-out; /* Transición suave */
+}
+
+.custom-message.show {
+    opacity: 1; /* Visible */
+    visibility: visible; /* Interactuable */
+}
+.custom-message.error {
+    background-color: #f44336; /* Rojo */
+}
+.custom-message.success {
+    background-color: #4CAF50; /* Verde */
+}
+
+
+
+
+
+
+

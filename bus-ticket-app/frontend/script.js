@@ -12,7 +12,7 @@ function register() {
         body: JSON.stringify({ username, password, email })
     })
     .then(response => response.json())
-    .then(data => alert(data.message))
+	.then(data => showMessage(data.message))
     .catch(error => console.error('Error:', error));
 }
 
@@ -28,11 +28,11 @@ function login() {
     .then(response => response.json())
     .then(data => {
         if (data.token) {
-            alert('Login satisfactorio');
+            showMessage('Login satisfactorio', 'success'); // Puedes usar un tipo 'success'
             localStorage.setItem('token', data.token);
             showRouteSelection();
         } else {
-            alert('Credenciales incorrectas');
+            showMessage('Credenciales incorrectas', 'error'); // Puedes usar un tipo 'error'
         }
     })
     .catch(error => console.error('Error:', error));
@@ -67,7 +67,7 @@ function checkAvailability() {
     const date = document.getElementById('travel-date').value;
 
     if (!routeId || !date) {
-        alert('Selecciona ruta y fecha');
+        showMessage('Selecciona ruta y fecha', 'info');
         return;
     }
 
@@ -131,7 +131,7 @@ function selectSeat(seatNumber, element) {
 
 function confirmPayment() {
     if (selectedSeats.length === 0) { // Usar selectedSeats en lugar de selectedSeat
-        alert('Selecciona al menos un asiento');
+        showMessage('Selecciona al menos un asiento', 'info');
         return;
     }
 
@@ -182,7 +182,7 @@ function reserveSeats() {
     const date = document.getElementById('travel-date').value;
 
     if (!routeId || !date) {
-        alert('Missing route or date');
+        showMessage('Falta ruta o fecha', 'error');
         return;
     }
 
@@ -212,4 +212,16 @@ function resetApp() {
     document.getElementById('seat-selection').style.display = 'none';
     document.getElementById('seat-map').innerHTML = '';
     selectedSeat = null;
+}
+// Función para mostrar avisos personalizados
+function showMessage(message, type = 'info') {
+    const messageDiv = document.getElementById('custom-message');
+    messageDiv.textContent = message;
+    // Puedes añadir lógica para tipos de mensaje si implementas los estilos .success/.error
+    // messageDiv.className = 'custom-message show ' + type;
+    messageDiv.className = 'custom-message show'; // Usamos solo la clase 'show' por ahora
+
+    setTimeout(() => {
+        messageDiv.className = 'custom-message'; // Oculta el mensaje después de 3 segundos
+    }, 3000); // El mensaje se oculta después de 3000 milisegundos (3 segundos)
 }
