@@ -1,7 +1,7 @@
 // script.js - dashboard.js
 // Lógica principal y coordinación de la página del dashboard
 
-// --- Importar funciones necesarias de otros módulos ---
+// --- Importar funciones y variables necesarias de otros módulos ---
 
 // De auth.js (para cerrar sesión)
 import { resetApp } from './auth.js';
@@ -9,24 +9,33 @@ import { resetApp } from './auth.js';
 // De ui.js (para mostrar mensajes)
 import { showMessage } from './ui.js';
 
-// De routes.js (para cargar rutas y horarios) - Asumimos que se exportarán desde allí
-import { loadRoutes, loadSchedules } from './routes.js'; // Estas funciones deben ser movidas a routes.js y exportadas
+// De routes.js (para cargar rutas y horarios)
+import { loadRoutes, loadSchedules } from './routes.js';
 
-// De booking.js (para verificación de disponibilidad, selección de asientos) - Asumimos que se exportarán desde allí
-import { checkAvailability, showSeatMap, selectSeat, selectedSeats, resetSelectedSeats } from './booking.js';
+// De booking.js (para verificación de disponibilidad, selección de asientos, estado, y reset)
+// Importa las funciones y variables necesarias de booking.js
+import {
+    checkAvailability, // Función para verificar disponibilidad
+    showSeatMap, // Función para renderizar el mapa de asientos (aunque checkAvailability la llama)
+    selectSeat, // Función para manejar el clic en asientos (aunque showSeatMap adjunta el listener)
+    selectedSeats, // Variable de estado para los asientos seleccionados (necesaria para resetear y pasar a makeReservation)
+    resetSelectedSeats, // Función para resetear selectedSeats (llamada al cambiar de sección)
+    currentRouteId, // Variable de estado para la ruta seleccionada actualmente
+    currentSelectedDate, // Variable de estado para la fecha seleccionada actualmente
+    currentSelectedSchedule, // Variable de estado para el horario seleccionado actualmente
+    PRICE_PER_SEAT // Precio por asiento (necesario para calcular el total en el resumen de pago)
+} from './booking.js';
 
-// De payment.js (para confirmar pago, reservar asientos) - Asumimos que se exportarán desde allí
-import { confirmPayment } from './payment.js'; // Importar confirmPayment
-// (Las funciones de payment/reserve podrían estar en booking.js o un archivo de orden/checkout, decidiremos después)
-
-// Variables de estado que podrían ir en booking.js o un archivo de estado global si es necesario en varios módulos
-// export let selectedSeats = []; // Si se gestionan en booking.js, importarlas
-// export const PRICE_PER_SEAT = 43; // Si se gestiona en booking.js, importarla
+// De payment.js (para simulación de pago) - Asumimos que tendrá una función para iniciar la simulación
+// Asegúrate de que processPaymentSimulation esté exportada en payment.js
+import { processPaymentSimulation } from './payment.js';
 
 
 // --- Funciones de Manejo de UI del Dashboard ---
 
-// Función para ocultar todas las secciones de contenido
+/**
+ * Oculta todas las secciones de contenido principal del dashboard.
+ */
 function hideAllContentSections() {
     const contentSections = document.querySelectorAll('.main-content .content-section');
     contentSections.forEach(section => {
@@ -34,184 +43,277 @@ function hideAllContentSections() {
     });
 }
 
-// Función para mostrar una sección de contenido específica y ejecutar lógica asociada
-export function showContentSection(sectionId) { // Exportar si necesitas llamarla desde fuera de este módulo (ej: desde un import dinámico)
+/**
+ * Muestra una sección de contenido específica del dashboard y ejecuta lógica asociada.
+ * Exportada para ser llamada desde los manejadores de eventos de navegación.
+ * @param {string} sectionId El ID de la sección de contenido a mostrar (ej: 'user-info-section').
+ */
+export function showContentSection(sectionId) {
+    console.log(`showContentSection: Intentando mostrar sección: ${sectionId}`);
     hideAllContentSections();
     const sectionToShow = document.getElementById(sectionId);
     if (sectionToShow) {
         sectionToShow.style.display = 'block';
+        console.log(`showContentSection: Sección ${sectionId} mostrada.`);
+
 
         // Lógica adicional si la sección mostrada es la de rutas
         if (sectionId === 'route-selection') {
+            console.log("showContentSection: Lógica para sección de rutas.");
             // Cargar las rutas cada vez que se muestre la sección de selección de ruta
             loadRoutes(); // <- Función importada de routes.js
             // También podrías querer resetear los selects de horario y fecha aquí
              const scheduleSelect = document.getElementById('schedule');
              const dateInput = document.getElementById('travel-date');
              if (scheduleSelect) {
-                scheduleSelect.innerHTML = '<option value="">Selecciona un horario</option>';
-                scheduleSelect.style.display = 'none';
+                 scheduleSelect.innerHTML = '<option value="">Selecciona un horario</option>';
+                 scheduleSelect.style.display = 'none';
              }
              if (dateInput) dateInput.value = ''; // Limpiar la fecha
         }
         // Llamar a loadUserInfo si la sección es la de información del usuario
         if (sectionId === 'user-info-section') {
-             loadUserInfo(); // <- Función definida/importada en este archivo
+             console.log("showContentSection: Lógica para sección de info de usuario.");
+             loadUserInfo(); // <- Función definida en este archivo
         }
         // Lógica similar para la sección de reservas
         if (sectionId === 'reservations-section') {
-            // loadReservations(); // Necesitas crear esta función e importarla/definirla
-             console.log("Mostrando sección de Mis Reservas. (Funcionalidad pendiente)");
+             console.log("showContentSection: Lógica para sección de Mis Reservas (pendiente de implementación).");
+            // loadReservations(); // Necesitas crear esta función (en booking.js o un nuevo archivo) e importarla/definirla
         }
-
-        // Lógica para resetear asientos/pago si sales de la sección de asientos/pago
-         // Si la sección mostrada NO es la de asientos
-         if (sectionId !== 'seat-selection') {
-             // Resetear asientos seleccionados y display de precio
-             // ¡Llama a la función de reseteo del módulo booking.js en lugar de reasignar directamente!
-             if (typeof resetSelectedSeats === 'function') { // Verifica si la función existe (buena práctica)
-                  resetSelectedSeats(); // <-- Llama a la función importada para resetear
-             } else {
-                  console.warn("resetSelectedSeats function not found in booking.js module.");
-                   // Fallback: intentar vaciar el array si es accesible y es un array
-                   if (Array.isArray(selectedSeats)) {
-                       selectedSeats.length = 0;
-                       const priceDisplay = document.getElementById('price-display');
-                       if(priceDisplay) priceDisplay.textContent = `Total: €0`;
-                   }
-             }
-             // Ocultar la sección de asientos si estaba visible
-             const seatSection = document.getElementById('seat-selection');
-             if(seatSection) seatSection.style.display = 'none'; // Esto ya lo hace hideAllContentSections, pero esta lógica es específica de no estar en la sección de asientos
-
-             // Ocultar la sección de pago si estaba visible
-             const paymentSection = document.getElementById('payment-section'); // Asumiendo este ID para la nueva sección de pago
-             if(paymentSection) paymentSection.style.display = 'none'; // Asegurarse de que la sección de pago también se oculte
+         // Lógica para la sección de pago
+         if (sectionId === 'payment-section') {
+              console.log("showContentSection: Lógica para sección de Pago.");
+             // No hay lógica de carga aquí per se, el resumen se actualiza antes de cambiar a esta sección.
          }
 
-         // Si la sección mostrada ES la de asientos, quizás limpiar la sección de pago por si vienes de allí?
-          if (sectionId === 'seat-selection') {
-              const paymentSection = document.getElementById('payment-section');
-              if(paymentSection) paymentSection.style.display = 'none';
-              // Quizás inicializar algo en la sección de asientos si vienes de otro lado
-              // showSeatMap(lastAvailabilityData); // Si guardas los datos de disponibilidad
-          }
 
-         // Si la sección mostrada ES la de pago, quizás limpiar la sección de asientos o resumen
-         // if (sectionId === 'payment-section') { /* ... */ }
+        // --- Lógica para limpiar estado y secciones al SALIR de la sección de asientos/pago ---
+        // Esto se ejecuta CADA VEZ que cambias a una sección que NO es 'seat-selection'
+         if (sectionId !== 'seat-selection' && sectionId !== 'payment-section') {
+             console.log(`showContentSection: Saliendo de secciones de booking/payment. Reseteando estado...`);
+             // Resetear asientos seleccionados y display de precio llamando a la función de booking.js
+             if (typeof resetSelectedSeats === 'function') {
+                  resetSelectedSeats(); // <-- Llama a la función importada de booking.js
+             } else {
+                  console.warn("showContentSection: resetSelectedSeats function not found during section change reset.");
+                  // Fallback menos seguro si la función no se importa correctamente
+                  if (Array.isArray(selectedSeats)) selectedSeats.length = 0;
+                  const priceDisplay = document.getElementById('price-display');
+                  if(priceDisplay) priceDisplay.textContent = `Total: €0`;
+             }
+
+             // Asegurarse de que las secciones de asientos y pago estén ocultas
+              const seatSection = document.getElementById('seat-selection');
+              if(seatSection && seatSection.style.display !== 'none') {
+                  seatSection.style.display = 'none';
+                   console.log("showContentSection: Sección de asientos forzada a ocultar.");
+              }
+              const paymentSection = document.getElementById('payment-section');
+               if(paymentSection && paymentSection.style.display !== 'none') {
+                   paymentSection.style.display = 'none';
+                    console.log("showContentSection: Sección de pago forzada a ocultar.");
+               }
+         } else if (sectionId === 'seat-selection') {
+             // Si entras a la sección de asientos, asegúrate de que la de pago esté oculta
+              const paymentSection = document.getElementById('payment-section');
+              if(paymentSection && paymentSection.style.display !== 'none') {
+                  paymentSection.style.display = 'none';
+                   console.log("showContentSection: Sección de pago forzada a ocultar al ir a asientos.");
+              }
+         } else if (sectionId === 'payment-section') {
+              // Si entras a la sección de pago, asegúrate de que la de asientos esté oculta
+               const seatSection = document.getElementById('seat-selection');
+               if(seatSection && seatSection.style.display !== 'none') {
+                   seatSection.style.display = 'none';
+                    console.log("showContentSection: Sección de asientos forzada a ocultar al ir a pago.");
+               }
+               // Aquí podrías llamar a una función para inicializar la sección de pago si fuera necesario,
+               // pero updatePaymentSummary ya lo hace antes de cambiar la sección.
+         }
+
 
     } else {
-        console.error(`Sección de contenido con ID "${sectionId}" no encontrada en dashboard.html.`);
-        // Opcional: mostrar un mensaje de error al usuario
+        console.error(`showContentSection: Sección de contenido con ID "${sectionId}" no encontrada en dashboard.html.`);
         showMessage(`Error interno: No se pudo mostrar la sección "${sectionId}".`, 'error');
     }
 }
 
-// Función para cargar y mostrar la información del usuario (podría ir aquí o en un archivo api/user)
-// La mantenemos aquí por ahora ya que actualiza directamente el DOM de esta sección.
+/**
+ * Carga y muestra la información del usuario en la sección correspondiente.
+ * Se llama desde showContentSection cuando se muestra la sección de info de usuario.
+ */
 function loadUserInfo() {
+    console.log("loadUserInfo: Cargando información del usuario...");
     const token = localStorage.getItem('token');
     const usernameSpan = document.getElementById('user-info-username');
     const emailSpan = document.getElementById('user-info-email');
-    const tokenSpan = document.getElementById('user-info-token'); // Opcional
+    const tokenSpan = document.getElementById('user-info-token');
 
     // Limpiar contenido anterior y mostrar estado de carga/placeholder
     if(usernameSpan) usernameSpan.textContent = 'Cargando...';
     if(emailSpan) emailSpan.textContent = 'Cargando...';
-    if(tokenSpan) tokenSpan.textContent = token ? token.substring(0, 10) + '...' : 'No disponible'; // Mostrar solo parte del token
+    // Mostrar solo parte del token por seguridad, si existe
+    if(tokenSpan) tokenSpan.textContent = token ? `${token.substring(0, 10)}...` : 'No disponible';
 
     if (!token) {
-        console.log('No token found for loading user info.');
+        console.log('loadUserInfo: No token found. Cannot load user info.');
          if(usernameSpan) usernameSpan.textContent = 'No disponible';
          if(emailSpan) emailSpan.textContent = 'No disponible';
          if(tokenSpan) tokenSpan.textContent = 'No disponible';
-         // No redirigimos aquí, eso lo maneja el DOMContentLoaded inicial
+         // La redirección al login ya la maneja el DOMContentLoaded si no hay token al cargar la página
         return;
     }
 
     // Realizar la llamada a la API para obtener la información del usuario
-    // La llamada fetch podría estar encapsulada en un módulo api.js
+    // *** Asumiendo que tu API de auth maneja /api/user/profile/ ***
      fetch('/api/user/profile/', { // Asegúrate de la barra final si tu backend la espera
          method: 'GET',
          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
      })
     .then(response => {
+        console.log("loadUserInfo: Respuesta fetch /api/user/profile/:", response);
         if (!response.ok) {
              if (response.status === 401) {
                  showMessage('Sesión expirada. Por favor, inicia sesión de nuevo.', 'error'); // showMessage importada
                  setTimeout(() => { resetApp(); }, 2000); // resetApp importada
+                  // Lanzar error para el catch
+                 throw new Error('Authentication Error: Session expired');
              }
-             // Intentar leer el error del body si es posible
+             // Intentar leer el error del body para un mensaje más detallado
              return response.json().then(err => { throw new Error(err.message || `HTTP error! status: ${response.status}`); });
         }
         return response.json();
     })
     .then(userData => {
+        console.log("loadUserInfo: Datos de usuario recibidos:", userData);
         // Rellenar los elementos HTML con los datos del usuario
         if(usernameSpan) usernameSpan.textContent = userData.username || 'N/A';
         if(emailSpan) emailSpan.textContent = userData.email || 'N/A';
         // El token ya se mostró, no lo actualizamos aquí a menos que la API lo devuelva (no suele ser el caso)
+         console.log("loadUserInfo: Información del usuario mostrada.");
     })
     .catch(error => {
-        console.error('Error al cargar info del usuario:', error);
+        console.error('loadUserInfo: Error al cargar info del usuario:', error);
         showMessage(error.message || 'No se pudo cargar la información del usuario.', 'error'); // showMessage importada
         if(usernameSpan) usernameSpan.textContent = 'Error';
         if(emailSpan) emailSpan.textContent = 'Error';
+         if(tokenSpan) tokenSpan.textContent = 'Error';
     });
+}
+
+/**
+ * Actualiza los elementos en la sección de pago con el resumen de la reserva.
+ * Se llama antes de mostrar la sección de pago.
+ * @param {string | number} routeId El ID de la ruta seleccionada.
+ * @param {string} date La fecha de viaje seleccionada (formato YYYY-MM-DD).
+ * @param {string} schedule El horario de viaje seleccionado (ej: "08:00").
+ * @param {number[]} seats Array de números de asiento seleccionados.
+ */
+function updatePaymentSummary(routeId, date, schedule, seats) {
+    console.log("updatePaymentSummary: Actualizando resumen de pago...");
+    const summaryRoute = document.getElementById('summary-route');
+    const summaryDate = document.getElementById('summary-date');
+    const summarySchedule = document.getElementById('summary-schedule');
+    const summarySeats = document.getElementById('summary-seats');
+    const summaryTotal = document.getElementById('summary-total');
+
+    // Para obtener el nombre de la ruta (ej: Madrid -> Ponferrada), necesitarías
+    // tener la lista completa de rutas disponible (quizás guardada en routes.js y exportada/importada)
+    // o hacer otra llamada a la API de rutas. Por ahora, solo mostramos el ID.
+    if(summaryRoute) summaryRoute.textContent = routeId; // O buscar el nombre real de la ruta
+
+
+    if(summaryDate) summaryDate.textContent = date;
+    if(summarySchedule) summarySchedule.textContent = schedule;
+    if(summarySeats) summarySeats.textContent = seats && seats.length > 0 ? seats.join(', ') : 'Ninguno'; // Mostrar los asientos separados por coma
+
+    // Calcular y mostrar el total (necesitas PRICE_PER_SEAT, importado desde booking.js)
+     if(summaryTotal && typeof PRICE_PER_PER_SEAT !== 'undefined') { // ¡OJO! Typo aquí, debería ser PRICE_PER_SEAT
+          console.warn("updatePaymentSummary: Typo detectado: Usando PRICE_PER_PER_SEAT en lugar de PRICE_PER_SEAT.");
+          summaryTotal.textContent = `€${(seats ? seats.length : 0) * PRICE_PER_PER_SEAT}`; // Usando el typo detectado
+     } else if (summaryTotal && typeof PRICE_PER_SEAT !== 'undefined') { // Usando el nombre correcto
+          summaryTotal.textContent = `€${(seats ? seats.length : 0) * PRICE_PER_SEAT}`;
+           console.log("updatePaymentSummary: Total calculado:", summaryTotal.textContent);
+     }
+      else {
+          console.warn("updatePaymentSummary: PRICE_PER_SEAT no accesible para calcular el total.");
+           if(summaryTotal) summaryTotal.textContent = '€N/A';
+     }
+
+    console.log("updatePaymentSummary: Resumen de pago actualizado.");
 }
 
 
 // --- Lógica de Inicialización del Dashboard (DOMContentLoaded) ---
 
+// Este bloque se ejecuta una vez que el DOM de la página dashboard.html esté completamente cargado.
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOMContentLoaded: Dashboard script started.");
+
     const token = localStorage.getItem('token');
     // Determinar si estamos en la página del dashboard
     const isDashboardPage = window.location.pathname.endsWith('/dashboard.html');
 
      // Lógica de redirección: si NO hay token y estamos en el dashboard, redirigir al login
      if (!token && isDashboardPage) {
-         console.log('No token found on dashboard page, redirecting to login.');
-         showMessage('Por favor, inicia sesión para acceder al dashboard.', 'info'); // showMessage importada
+         console.log('DOMContentLoaded: No token found on dashboard page, redirecting to login.');
+         showMessage('Por favor, inicia sesión para acceder al dashboard.', 'info');
          setTimeout(() => {
              window.location.href = 'index.html';
          }, 1000);
 
      } else if (token && isDashboardPage) {
          // Si SÍ hay token y estamos en el dashboard, configurar la página
-         console.log('Token found on dashboard page. Setting up dashboard...');
+         console.log('DOMContentLoaded: Token found on dashboard page. Setting up dashboard...');
 
-         // --- Configuración de Event Listeners para la Navegación y Elementos del Dashboard ---
-
+         // --- Obtener referencias a elementos clave del DOM ---
          const navLinks = document.querySelectorAll('.sidebar a[data-section]');
          const logoutLink = document.getElementById('logout-link');
-         const routeSelect = document.getElementById('route'); // <--- Obtener referencia al select de ruta
+         const routeSelect = document.getElementById('route');
+         const availabilityButton = document.getElementById('availabilityButton'); // ID del botón Disponibilidad
+         const reserveButton = document.getElementById('reserveButton'); // ID del botón Reservar (antes Pagar AHORA)
+         const confirmPaymentButton = document.getElementById('confirmPaymentButton'); // ID del botón Confirmar Pago en sección de pago
 
-         // Event listener para la navegación lateral
+         console.log("DOMContentLoaded: Referencias a elementos del DOM obtenidas.");
+
+
+         // --- Configuración de Event Listeners ---
+
+         // Event listener para la navegación lateral (clics en los enlaces del menú)
          navLinks.forEach(link => {
              link.addEventListener('click', (event) => {
-                 event.preventDefault(); // Evitar el comportamiento por defecto del enlace
+                 event.preventDefault(); // Evitar el comportamiento por defecto del enlace (<a href="#">)
                  const targetSectionId = event.target.getAttribute('data-section');
-                 showContentSection(targetSectionId); // showContentSection definida en este archivo
+                 // Llama a la función showContentSection definida en este archivo para cambiar de sección
+                 showContentSection(targetSectionId);
              });
          });
+         console.log("DOMContentLoaded: Event listeners para navegación lateral configurados.");
 
-         // Event listener para cerrar sesión
+
+         // Event listener para el enlace de cerrar sesión
          if (logoutLink) {
              logoutLink.addEventListener('click', (event) => {
                  event.preventDefault(); // Evitar el comportamiento por defecto del enlace
-                 resetApp(); // Llama a la función resetApp importada de auth.js
+                 // Llama a la función resetApp importada de auth.js para cerrar sesión y redirigir
+                 resetApp();
              });
-         }
+             console.log("DOMContentLoaded: Event listener para cerrar sesión configurado.");
+         } else { console.warn("DOMContentLoaded: Elemento con ID 'logout-link' no encontrado."); }
 
-         // Event Listener para la selección de ruta (para cargar horarios)
+
+         // Event Listener para el select de ruta (cuando el usuario selecciona una ruta)
          if (routeSelect) {
              routeSelect.addEventListener('change', (event) => {
                  const selectedRouteId = event.target.value;
-                 // Llamar a loadSchedules si se selecciona una ruta (importada de routes.js)
-                 if (selectedRouteId) { // Solo cargar horarios si se seleccionó una ruta válida (no la opción por defecto "")
-                    loadSchedules(selectedRouteId);
+                 // Llama a loadSchedules si se selecciona una ruta válida
+                 if (selectedRouteId) {
+                    console.log(`DOMContentLoaded: Ruta seleccionada: ${selectedRouteId}. Llamando a loadSchedules.`);
+                    loadSchedules(selectedRouteId); // Llama a la función importada de routes.js
                  } else {
                     // Limpiar select de horarios si se vuelve a la opción por defecto
+                    console.log("DOMContentLoaded: Ruta deseleccionada. Limpiando select de horarios.");
                     const scheduleSelect = document.getElementById('schedule');
                     if (scheduleSelect) {
                        scheduleSelect.innerHTML = '<option value="">Selecciona un horario</option>';
@@ -219,65 +321,110 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                  }
              });
-         } else {
-              console.warn("Elemento con ID 'route' no encontrado en dashboard.html");
-         }
+              console.log("DOMContentLoaded: Event listener para select de ruta configurado.");
+         } else { console.warn("DOMContentLoaded: Elemento con ID 'route' no encontrado."); }
 
-         // Event Listener para el botón "Disponibilidad" (llama a checkAvailability)
-         // Necesitarás obtener la referencia a este botón e importar checkAvailability de booking.js
-         const availabilityButton = document.querySelector('#route-selection button'); // Ajusta el selector si es necesario
-			if (availabilityButton) {
-			// Hacer el manejador async para poder usar await con checkAvailability
-				availabilityButton.addEventListener('click', async (event) => {
-					event.preventDefault();
-					try {
-						// checkAvailability ahora retorna los datos disponibles si tiene éxito
-						const availableSeats = await checkAvailability(); // Llama a la función importada y espera a que termine
 
-						// Si checkAvailability tuvo éxito y retornó datos, mostramos el mapa y cambiamos a la sección de asientos
-						// showSeatMap(availableSeats); // checkAvailability ya llama a showSeatMap internamente. ¡No llamar de nuevo aquí!
+         // Event Listener para el botón "Disponibilidad" en la sección de ruta
+         if (availabilityButton) {
+             // Hacer el manejador async para poder usar await con checkAvailability
+             availabilityButton.addEventListener('click', async (event) => {
+                 event.preventDefault(); // Evitar el comportamiento por defecto del botón
 
-						// Solo cambiar la sección DESPUÉS del éxito de checkAvailability
-						showContentSection('seat-selection'); // Llama a la función definida en dashboard.js
+                 console.log("DOMContentLoaded: Botón Disponibilidad clicado.");
 
-					} catch (error) {
-						// checkAvailability ya muestra mensaje de error, aquí solo podrías hacer algo adicional si fuera necesario
-						console.error("Error manejado por listener del botón de disponibilidad:", error);
-						// Opcional: Volver a la sección de selección de ruta si hay un error fatal de API
-						// showContentSection('route-selection');
-					}
-				});
-			}
+                 try {
+                     // Llama a la función checkAvailability importada de booking.js y espera a que termine.
+                     // checkAvailability internamente obtiene los valores de ruta/fecha/horario
+                     // y llama a showSeatMap si tiene éxito.
+                     await checkAvailability();
 
-         // Event Listener para el botón "Pagar AHORA" (llama a confirmPayment) - Este botón se moverá a la sección de pago
-         // Necesitarás obtener la referencia a este botón en la nueva sección de pago e importar confirmPayment de payment.js
-			const payButton = document.getElementById('payNowButton'); // Asegúrate de tener el ID en HTML
+                     // Si checkAvailability tuvo éxito (no lanzó error), cambiamos a la sección de asientos
+                     console.log("DOMContentLoaded: checkAvailability completada. Cambiando a sección de asientos.");
+                     showContentSection('seat-selection'); // Llama a la función definida en este archivo
 
-			if (payButton) {
-				payButton.addEventListener('click', async (event) => { // Hacer el manejador async
-					event.preventDefault();
+                 } catch (error) {
+                     // checkAvailability ya muestra mensaje de error, aquí solo logeamos si es necesario
+                     console.error("DOMContentLoaded: Error manejado por listener del botón de disponibilidad:", error);
+                     // Opcional: Quedarse en la sección actual o volver a la selección de ruta si hay un error fatal de API
+                     // showContentSection('route-selection');
+                 }
+             });
+             console.log("DOMContentLoaded: Event listener para botón Disponibilidad configurado.");
+         } else { console.warn("DOMContentLoaded: Botón de disponibilidad con ID 'availabilityButton' no encontrado."); }
 
-					// *** Obtener los detalles de la reserva antes de llamar a confirmPayment ***
-					const routeId = document.getElementById('route').value;
-					const date = document.getElementById('travel-date').value;
-					const schedule = document.getElementById('schedule').value;
-					// selectedSeats ya está importada desde booking.js
 
-					try {
-						// Llama a confirmPayment con los datos de la reserva
-						await confirmPayment(routeId, date, schedule, selectedSeats);
+         // --- Event Listener para el botón "Reservar" en la sección de asientos ---
+         if (reserveButton) {
+             reserveButton.addEventListener('click', async (event) => { // Hacer el manejador async
+                 event.preventDefault(); // Evitar el comportamiento por defecto
 
-						// Si confirmPayment tuvo éxito (no lanzó error), puedes hacer algo adicional aquí
-						console.log("Proceso de pago/reserva completado exitosamente.");
-						// Opcional: Redirigir a la sección "Mis Reservas"
-						// showContentSection('reservations-section');
+                 console.log("DOMContentLoaded: Botón Reservar clicado.");
 
-					} catch (error) {
-						// confirmPayment ya muestra mensaje de error, aquí solo podrías hacer algo adicional si fuera necesario
-						console.error("Error manejado por listener del botón de pago:", error);
-					}
-				});
-			}
+                 // *** Obtener los detalles de la reserva de las variables de estado importadas de booking.js ***
+                 // selectedSeats, currentRouteId, currentSelectedDate, currentSelectedSchedule son importadas de booking.js
+                 const routeId = currentRouteId;
+                 const date = currentSelectedDate;
+                 const schedule = currentSelectedSchedule;
+                 const seats = selectedSeats; // Los asientos seleccionados del array importado
+
+
+                 console.log("DOMContentLoaded: Intentando hacer reserva con:", { routeId, date, schedule, seats });
+
+
+                 try {
+                     // Llama a makeReservation con los datos de la reserva y espera a que termine.
+                     // makeReservation llama al endpoint /api/reservation/reserve
+                     await makeReservation(routeId, date, schedule, seats); // Llama a la función importada de booking.js
+
+                     // Si makeReservation tuvo éxito (no lanzó error), proceder al PAGO
+                     console.log("DOMContentLoaded: makeReservation completada. Procediendo a la sección de pago.");
+
+                     // Antes de cambiar de sección, actualizar el resumen en la sección de pago
+                     updatePaymentSummary(routeId, date, schedule, seats); // Llama a la función definida en este archivo
+
+                     // Cambiar a la sección de pago
+                     showContentSection('payment-section'); // Llama a la función definida en este archivo
+
+                 } catch (error) {
+                     // makeReservation ya muestra mensaje de error, aquí solo logeamos si es necesario
+                     console.error("DOMContentLoaded: Error manejado por listener del botón de reserva:", error);
+                     // Opcional: Quedarse en la sección de asientos con el mensaje de error
+                     // showContentSection('seat-selection');
+                 }
+             });
+             console.log("DOMContentLoaded: Event listener para botón Reservar configurado.");
+         } else { console.warn("DOMContentLoaded: Botón de reserva con ID 'reserveButton' no encontrado."); }
+
+
+         // --- Event Listener para el botón "Confirmar Pago" en la sección de pago ---
+         if (confirmPaymentButton) {
+             confirmPaymentButton.addEventListener('click', async (event) => {
+                 event.preventDefault(); // Evitar el comportamiento por defecto
+
+                 console.log("DOMContentLoaded: Botón Confirmar Pago clicado. Llamando a simulación de pago...");
+
+                 try {
+                     // Llama a la función que simula el pago importada de payment.js
+                     // Puedes pasarle detalles de la reserva si processPaymentSimulation los necesita (aunque en la simulación básica no es estrictamente necesario)
+                     await processPaymentSimulation(/* pasar datos si es necesario */);
+
+                     // Si la simulación de pago fue exitosa (no lanzó error)
+                     console.log("DOMContentLoaded: Simulación de pago completada exitosamente.");
+                     // Opcional: Redirigir a la sección de Mis Reservas o mostrar un mensaje final
+                     showMessage('Redirigiendo a Mis Reservas...', 'info'); // showMessage importada
+                     setTimeout(() => { // Pequeño retraso para que el mensaje se vea
+                         showContentSection('reservations-section'); // Llama a la función definida en este archivo
+                     }, 1000);
+
+
+                 } catch (error) {
+                      // processPaymentSimulation ya muestra mensaje de error, aquí solo logeamos
+                      console.error("DOMContentLoaded: Error manejado por listener del botón de Confirmar Pago:", error);
+                 }
+             });
+              console.log("DOMContentLoaded: Event listener para botón Confirmar Pago configurado.");
+         } else { console.warn("DOMContentLoaded: Botón Confirmar Pago con ID 'confirmPaymentButton' no encontrado."); }
 
 
          // ... (configuración de listeners para otros elementos del dashboard si es necesario) ...
@@ -285,11 +432,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
          // --- Mostrar la Sección Inicial del Dashboard ---
          // Muestra la sección de información del usuario por defecto al cargar el dashboard
-         showContentSection('user-info-section'); // showContentSection definida en este archivo
-         // Esto llamará automáticamente a loadUserInfo()
+         console.log("DOMContentLoaded: Mostrando sección inicial 'user-info-section'.");
+         showContentSection('user-info-section'); // Llama a la función definida en este archivo
+         // Esto llamará automáticamente a loadUserInfo() dentro de showContentSection.
+
+         // Si prefieres empezar en la selección de ruta, usa:
+         // showContentSection('route-selection');
+
 
      }
-     // No hay lógica para isIndexPage aquí
+     // No hay lógica para isIndexPage aquí, eso está en index.js
 
+     console.log("DOMContentLoaded: Dashboard script initialization finished.");
 });
-
