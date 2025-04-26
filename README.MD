@@ -2,8 +2,8 @@
 
 Despliegue en un único host de la app de auobuses (en dev)
 
-Propuesta: 
+Desarrollo Final: 
 
-1) Despliegue de dos hosts con vagrant (ambos con docker)
-2) Despliegue de un swarm (ver documentación - docker swarm init > docker swarm join)
-3) Recodificar docker-compose.yml a  un stack (proxy inverso replicado en todos los nodos)
+1) Ejecución en /vagrant/bus-app/
+2) Métricas de prometheus
+3) Visualización con Grafana
