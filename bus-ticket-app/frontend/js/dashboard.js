@@ -18,6 +18,7 @@ import {
     checkAvailability, // Función para verificar disponibilidad
     showSeatMap, // Función para renderizar el mapa de asientos (aunque checkAvailability la llama)
     selectSeat, // Función para manejar el clic en asientos (aunque showSeatMap adjunta el listener)
+	makeReservation,
     selectedSeats, // Variable de estado para los asientos seleccionados (necesaria para resetear y pasar a makeReservation)
     resetSelectedSeats, // Función para resetear selectedSeats (llamada al cambiar de sección)
     currentRouteId, // Variable de estado para la ruta seleccionada actualmente
@@ -26,9 +27,12 @@ import {
     PRICE_PER_SEAT // Precio por asiento (necesario para calcular el total en el resumen de pago)
 } from './booking.js';
 
-// De payment.js (para simulación de pago) - Asumimos que tendrá una función para iniciar la simulación
 // Asegúrate de que processPaymentSimulation esté exportada en payment.js
 import { processPaymentSimulation } from './payment.js';
+
+
+// --- Variable a nivel de módulo para almacenar datos del usuario ---
+let currentUserData = null; // <-- Variable para almacenar el perfil del usuario (para simulación de pago)
 
 
 // --- Funciones de Manejo de UI del Dashboard ---
@@ -78,29 +82,26 @@ export function showContentSection(sectionId) {
         }
         // Lógica similar para la sección de reservas
         if (sectionId === 'reservations-section') {
-             console.log("showContentSection: Lógica para sección de Mis Reservas (pendiente de implementación).");
-            // loadReservations(); // Necesitas crear esta función (en booking.js o un nuevo archivo) e importarla/definirla
+             console.log("showContentSection: Lógica para sección de Mis Reservas.");
+             loadReservations(); // <-- Llama a la función para cargar y mostrar reservas
         }
          // Lógica para la sección de pago
          if (sectionId === 'payment-section') {
               console.log("showContentSection: Lógica para sección de Pago.");
-             // No hay lógica de carga aquí per se, el resumen se actualiza antes de cambiar a esta sección.
+             // El resumen ya se actualiza antes de cambiar a esta sección en el listener del botón Reservar.
+             // Mostrar los datos de pago simulados en los spans correspondientes de la sección de pago
+             updatePaymentDetailsDisplay(); // <-- Llama a una nueva función para mostrar los datos de pago en la sección de pago
          }
 
 
         // --- Lógica para limpiar estado y secciones al SALIR de la sección de asientos/pago ---
-        // Esto se ejecuta CADA VEZ que cambias a una sección que NO es 'seat-selection'
          if (sectionId !== 'seat-selection' && sectionId !== 'payment-section') {
              console.log(`showContentSection: Saliendo de secciones de booking/payment. Reseteando estado...`);
-             // Resetear asientos seleccionados y display de precio llamando a la función de booking.js
+             // Resetear asientos seleccionados y display de precio
              if (typeof resetSelectedSeats === 'function') {
                   resetSelectedSeats(); // <-- Llama a la función importada de booking.js
              } else {
                   console.warn("showContentSection: resetSelectedSeats function not found during section change reset.");
-                  // Fallback menos seguro si la función no se importa correctamente
-                  if (Array.isArray(selectedSeats)) selectedSeats.length = 0;
-                  const priceDisplay = document.getElementById('price-display');
-                  if(priceDisplay) priceDisplay.textContent = `Total: €0`;
              }
 
              // Asegurarse de que las secciones de asientos y pago estén ocultas
@@ -128,8 +129,8 @@ export function showContentSection(sectionId) {
                    seatSection.style.display = 'none';
                     console.log("showContentSection: Sección de asientos forzada a ocultar al ir a pago.");
                }
-               // Aquí podrías llamar a una función para inicializar la sección de pago si fuera necesario,
-               // pero updatePaymentSummary ya lo hace antes de cambiar la sección.
+               // Los datos de pago ya deberían estar en currentUserData si loadUserInfo se llamó al inicio o al ir a user-info
+               updatePaymentDetailsDisplay(); // Asegurarse de que los detalles de pago se muestren en la sección de pago
          }
 
 
@@ -142,6 +143,7 @@ export function showContentSection(sectionId) {
 /**
  * Carga y muestra la información del usuario en la sección correspondiente.
  * Se llama desde showContentSection cuando se muestra la sección de info de usuario.
+ * ¡Modificada para mostrar datos de pago simulados y guardarlos en currentUserData!
  */
 function loadUserInfo() {
     console.log("loadUserInfo: Cargando información del usuario...");
@@ -149,25 +151,35 @@ function loadUserInfo() {
     const usernameSpan = document.getElementById('user-info-username');
     const emailSpan = document.getElementById('user-info-email');
     const tokenSpan = document.getElementById('user-info-token');
+    // Referencias a los nuevos elementos para mostrar datos de pago simulados en Info de Usuario
+    const cardNumberSpan = document.getElementById('user-info-card-number');
+    const expiryDateSpan = document.getElementById('user-info-expiry-date');
+    const cvvSpan = document.getElementById('user-info-cvv'); // <-- ¡Asegúrate de tener esta referencia!
 
     // Limpiar contenido anterior y mostrar estado de carga/placeholder
     if(usernameSpan) usernameSpan.textContent = 'Cargando...';
     if(emailSpan) emailSpan.textContent = 'Cargando...';
-    // Mostrar solo parte del token por seguridad, si existe
     if(tokenSpan) tokenSpan.textContent = token ? `${token.substring(0, 10)}...` : 'No disponible';
+    if(cardNumberSpan) cardNumberSpan.textContent = 'Cargando...';
+    if(expiryDateSpan) expiryDateSpan.textContent = 'Cargando...';
+    if(cvvSpan) cvvSpan.textContent = 'Cargando...'; // Limpiar/cargar el span del CVV
+
 
     if (!token) {
         console.log('loadUserInfo: No token found. Cannot load user info.');
          if(usernameSpan) usernameSpan.textContent = 'No disponible';
          if(emailSpan) emailSpan.textContent = 'No disponible';
          if(tokenSpan) tokenSpan.textContent = 'No disponible';
-         // La redirección al login ya la maneja el DOMContentLoaded si no hay token al cargar la página
+         if(cardNumberSpan) cardNumberSpan.textContent = 'No disponible';
+         if(expiryDateSpan) expiryDateSpan.textContent = 'No disponible';
+         if(cvvSpan) cvvSpan.textContent = 'No disponible'; // Marcar CVV como no disponible
+         currentUserData = null; // Asegurarse de que la variable también esté nula si no hay token
         return;
     }
 
-    // Realizar la llamada a la API para obtener la información del usuario
-    // *** Asumiendo que tu API de auth maneja /api/user/profile/ ***
-     fetch('/api/user/profile/', { // Asegúrate de la barra final si tu backend la espera
+    // Realizar la llamada a la API para obtener la información del usuario (ahora incluye datos de pago simulados)
+    // Asumiendo que tu API de auth maneja /api/user/profile/ y devuelve los nuevos campos
+     fetch('/api/user/profile/', {
          method: 'GET',
          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
      })
@@ -175,38 +187,160 @@ function loadUserInfo() {
         console.log("loadUserInfo: Respuesta fetch /api/user/profile/:", response);
         if (!response.ok) {
              if (response.status === 401) {
-                 showMessage('Sesión expirada. Por favor, inicia sesión de nuevo.', 'error'); // showMessage importada
-                 setTimeout(() => { resetApp(); }, 2000); // resetApp importada
-                  // Lanzar error para el catch
+                 showMessage('Sesión expirada. Por favor, inicia sesión de nuevo.', 'error');
+                 setTimeout(() => { resetApp(); }, 2000);
                  throw new Error('Authentication Error: Session expired');
              }
-             // Intentar leer el error del body para un mensaje más detallado
-             return response.json().then(err => { throw new Error(err.message || `HTTP error! status: ${response.status}`); });
+             // Intenta leer el error del body si es posible
+             return response.json().catch(() => ({ message: 'Error desconocido al cargar perfil' }));
         }
         return response.json();
     })
     .then(userData => {
         console.log("loadUserInfo: Datos de usuario recibidos:", userData);
-        // Rellenar los elementos HTML con los datos del usuario
+        // --- ¡GUARDAR LOS DATOS COMPLETOS DEL USUARIO! ---
+        currentUserData = userData; // <-- Guardar los datos recibidos
+
+
+        // Rellenar los elementos HTML en Info de Usuario
         if(usernameSpan) usernameSpan.textContent = userData.username || 'N/A';
         if(emailSpan) emailSpan.textContent = userData.email || 'N/A';
-        // El token ya se mostró, no lo actualizamos aquí a menos que la API lo devuelva (no suele ser el caso)
-         console.log("loadUserInfo: Información del usuario mostrada.");
+        // Los nuevos campos de pago simulados
+        if(cardNumberSpan) cardNumberSpan.textContent = userData.card_number || 'N/A';
+        if(expiryDateSpan) expiryDateSpan.textContent = userData.expiry_date || 'N/A';
+        if(cvvSpan) {
+            cvvSpan.textContent = userData.cvv || 'N/A'; // <-- ¡Añade esta línea!
+            // Advertencia de seguridad (mantener en desarrollo, quitar o comentar en producción)
+            console.warn("loadUserInfo: Mostrando CVV en la UI (solo para simulación/prueba). En una aplicación real, el CVV NUNCA debe mostrarse en la interfaz de usuario.");
+        }
+
+         console.log("loadUserInfo: Información del usuario mostrada (incl. datos de pago) y datos guardados en currentUserData.");
+
+         // Opcional: Si ya estás en la sección de pago, podrías actualizar los detalles de pago aquí también
+         // Esto asegura que si el usuario va directamente a user-info y luego a pago, los detalles se muestran
+         // Pero lo manejamos mejor llamando a updatePaymentDetailsDisplay() cuando se cambia a la sección de pago.
+
     })
     .catch(error => {
         console.error('loadUserInfo: Error al cargar info del usuario:', error);
-        showMessage(error.message || 'No se pudo cargar la información del usuario.', 'error'); // showMessage importada
+        showMessage(error.message || 'No se pudo cargar la información del usuario.', 'error');
         if(usernameSpan) usernameSpan.textContent = 'Error';
         if(emailSpan) emailSpan.textContent = 'Error';
          if(tokenSpan) tokenSpan.textContent = 'Error';
+         if(cardNumberSpan) cardNumberSpan.textContent = 'Error';
+         if(expiryDateSpan) expiryDateSpan.textContent = 'Error';
+         if(cvvSpan) cvvSpan.textContent = 'Error'; // Marcar CVV como error
+         currentUserData = null; // Asegurarse de que la variable esté nula si falla la carga
     });
+}
+
+
+/**
+ * Carga las reservas del usuario actual desde la API de reservas y las muestra en la interfaz.
+ * Se llama desde showContentSection cuando se muestra la sección de Mis Reservas.
+ */
+async function loadReservations() {
+    console.log("loadReservations: Cargando reservas del usuario...");
+    const reservationsListDiv = document.getElementById('reservations-list');
+    const loadingDiv = document.getElementById('loading-reservations'); // Puedes añadir un spinner específico para esta sección en HTML
+
+    // Limpiar lista anterior y mostrar estado de carga
+    if (reservationsListDiv) {
+        reservationsListDiv.innerHTML = ''; // Limpiar contenido anterior
+    }
+    if (loadingDiv) { // Asumiendo un div con id="loading-reservations" en dashboard.html dentro de #reservations-section
+        loadingDiv.style.display = 'block';
+    } else {
+        // Si no hay spinner específico, podrías poner un mensaje de carga temporal en la lista
+        if (reservationsListDiv) reservationsListDiv.innerHTML = '<p>Cargando reservas...</p>';
+    }
+
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+        console.log('loadReservations: No token found. Cannot load reservations.');
+        if (reservationsListDiv) reservationsListDiv.innerHTML = '<p>Por favor, inicia sesión para ver tus reservas.</p>';
+        if (loadingDiv) loadingDiv.style.display = 'none';
+        return;
+    }
+
+    // La API /api/reservation/reservations/user/ espera el token en el header para identificar al usuario
+    const apiUrl = '/api/reservation/reservations/user/';
+
+    console.log("loadReservations: Llamando a API:", apiUrl);
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${token}`, // Enviar el token
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log("loadReservations: Respuesta de fetch para reservas:", response);
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                showMessage('Sesión expirada. Por favor, inicia sesión de nuevo.', 'error');
+                setTimeout(() => { resetApp(); }, 2000);
+                throw new Error('Authentication Error: Session expired');
+            }
+             // Para otros errores (ej: 500 en el backend)
+            const errorBody = await response.json().catch(() => ({ message: 'Error desconocido' }));
+            throw new Error(errorBody.message || `HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json(); // Esperamos un objeto como { "reservations": [...] }
+        console.log("loadReservations: Datos de reservas recibidos:", data);
+
+        if (!data || !data.reservations || !Array.isArray(data.reservations)) {
+            console.error("loadReservations: Formato de datos de reservas incorrecto:", data);
+             if (reservationsListDiv) reservationsListDiv.innerHTML = '<p>Error al cargar las reservas (formato incorrecto).</p>';
+            throw new Error("Formato de datos de reservas incorrecto de la API.");
+        }
+
+        const reservations = data.reservations;
+
+        // --- Mostrar las reservas en la interfaz ---
+        if (reservationsListDiv) {
+             reservationsListDiv.innerHTML = ''; // Limpiar el mensaje de carga o anterior
+
+             if (reservations.length > 0) {
+                 const ul = document.createElement('ul'); // Crear una lista desordenada
+                 reservations.forEach(reservation => {
+                     const li = document.createElement('li');
+                     // Puedes formatear la visualización como prefieras
+                     li.textContent = `Reserva ID: ${reservation.id}, Ruta: ${reservation.bus_id}, Fecha: ${reservation.date}, Horario: ${reservation.schedule}, Asiento: ${reservation.seat_number}`;
+                     // Opcional: Añadir más detalles o estructura HTML/CSS para cada reserva
+                     ul.appendChild(li);
+                 });
+                 reservationsListDiv.appendChild(ul); // Añadir la lista al contenedor
+             } else {
+                 reservationsListDiv.innerHTML = '<p>No tienes reservas realizadas aún.</p>';
+             }
+         } else {
+             console.warn("loadReservations: Contenedor #reservations-list no encontrado.");
+         }
+
+
+        if (loadingDiv) loadingDiv.style.display = 'none'; // Ocultar spinner
+         console.log("loadReservations: Reservas mostradas en la interfaz.");
+
+    } catch (error) {
+        console.error('loadReservations: ERROR CAPTURADO -', error);
+        showMessage(error.message || 'No se pudieron cargar las reservas.', 'error');
+        if (reservationsListDiv) reservationsListDiv.innerHTML = '<p>Error al cargar las reservas.</p>'; // Mostrar error en la UI
+        if (loadingDiv) loadingDiv.style.display = 'none';
+        // No propagar el error si ya lo manejamos visualmente
+    }
 }
 
 /**
  * Actualiza los elementos en la sección de pago con el resumen de la reserva.
- * Se llama antes de mostrar la sección de pago.
+ * Se llama antes de mostrar la sección de pago (desde el listener del botón Reservar).
  * @param {string | number} routeId El ID de la ruta seleccionada.
- * @param {string} date La fecha de viaje seleccionada (formato YYYY-MM-DD).
+ * @param {string} date La fecha de viaje seleccionada (formatoYYYY-MM-DD).
  * @param {string} schedule El horario de viaje seleccionado (ej: "08:00").
  * @param {number[]} seats Array de números de asiento seleccionados.
  */
@@ -218,9 +352,6 @@ function updatePaymentSummary(routeId, date, schedule, seats) {
     const summarySeats = document.getElementById('summary-seats');
     const summaryTotal = document.getElementById('summary-total');
 
-    // Para obtener el nombre de la ruta (ej: Madrid -> Ponferrada), necesitarías
-    // tener la lista completa de rutas disponible (quizás guardada en routes.js y exportada/importada)
-    // o hacer otra llamada a la API de rutas. Por ahora, solo mostramos el ID.
     if(summaryRoute) summaryRoute.textContent = routeId; // O buscar el nombre real de la ruta
 
 
@@ -229,10 +360,7 @@ function updatePaymentSummary(routeId, date, schedule, seats) {
     if(summarySeats) summarySeats.textContent = seats && seats.length > 0 ? seats.join(', ') : 'Ninguno'; // Mostrar los asientos separados por coma
 
     // Calcular y mostrar el total (necesitas PRICE_PER_SEAT, importado desde booking.js)
-     if(summaryTotal && typeof PRICE_PER_PER_SEAT !== 'undefined') { // ¡OJO! Typo aquí, debería ser PRICE_PER_SEAT
-          console.warn("updatePaymentSummary: Typo detectado: Usando PRICE_PER_PER_SEAT en lugar de PRICE_PER_SEAT.");
-          summaryTotal.textContent = `€${(seats ? seats.length : 0) * PRICE_PER_PER_SEAT}`; // Usando el typo detectado
-     } else if (summaryTotal && typeof PRICE_PER_SEAT !== 'undefined') { // Usando el nombre correcto
+     if(summaryTotal && typeof PRICE_PER_SEAT !== 'undefined') { // Corregido el typo aquí
           summaryTotal.textContent = `€${(seats ? seats.length : 0) * PRICE_PER_SEAT}`;
            console.log("updatePaymentSummary: Total calculado:", summaryTotal.textContent);
      }
@@ -242,6 +370,29 @@ function updatePaymentSummary(routeId, date, schedule, seats) {
      }
 
     console.log("updatePaymentSummary: Resumen de pago actualizado.");
+}
+
+/**
+ * Muestra los datos de pago simulados del usuario en la sección de pago.
+ * Se llama cuando se muestra la sección de pago.
+ */
+function updatePaymentDetailsDisplay() {
+    console.log("updatePaymentDetailsDisplay: Actualizando detalles de pago en la UI...");
+    const paymentCardNumberSpan = document.getElementById('payment-card-number');
+    const paymentExpiryDateSpan = document.getElementById('payment-expiry-date');
+    // No necesitamos el input del CVV aquí, solo sus spans de visualización
+
+    if (!currentUserData) {
+        console.warn("updatePaymentDetailsDisplay: currentUserData no disponible. No se pueden mostrar los detalles de pago.");
+        if(paymentCardNumberSpan) paymentCardNumberSpan.textContent = 'N/A';
+        if(paymentExpiryDateSpan) paymentExpiryDateSpan.textContent = 'N/A';
+        return;
+    }
+
+    if(paymentCardNumberSpan) paymentCardNumberSpan.textContent = currentUserData.card_number || 'N/A';
+    if(paymentExpiryDateSpan) paymentExpiryDateSpan.textContent = currentUserData.expiry_date || 'N/A';
+
+    console.log("updatePaymentDetailsDisplay: Detalles de pago actualizados en la UI.");
 }
 
 
@@ -265,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
      } else if (token && isDashboardPage) {
          // Si SÍ hay token y estamos en el dashboard, configurar la página
-         console.log('DOMContentLoaded: Token found on dashboard page. Setting up dashboard...');
+         console.log("DOMContentLoaded: Token found on dashboard page. Setting up dashboard...");
 
          // --- Obtener referencias a elementos clave del DOM ---
          const navLinks = document.querySelectorAll('.sidebar a[data-section]');
@@ -400,34 +551,54 @@ document.addEventListener('DOMContentLoaded', () => {
          // --- Event Listener para el botón "Confirmar Pago" en la sección de pago ---
          if (confirmPaymentButton) {
              confirmPaymentButton.addEventListener('click', async (event) => {
-                 event.preventDefault(); // Evitar el comportamiento por defecto
-
+                 event.preventDefault();
                  console.log("DOMContentLoaded: Botón Confirmar Pago clicado. Llamando a simulación de pago...");
 
-                 try {
-                     // Llama a la función que simula el pago importada de payment.js
-                     // Puedes pasarle detalles de la reserva si processPaymentSimulation los necesita (aunque en la simulación básica no es estrictamente necesario)
-                     await processPaymentSimulation(/* pasar datos si es necesario */);
+                 // --- Obtener el CVV introducido por el usuario ---
+                 const cvvInput = document.getElementById('cvv-input');
+                 const enteredCvv = cvvInput ? cvvInput.value.trim() : null; // Usar trim() para quitar espacios
 
-                     // Si la simulación de pago fue exitosa (no lanzó error)
+                 // Validar que se introdujo algo para el CVV
+                 if (!enteredCvv || enteredCvv.length < 3) {
+                     showMessage('Introduce un CVV válido.', 'info');
+                     console.log("DOMContentLoaded: Validación de CVV fallida.");
+                     return; // Detener el proceso si no hay CVV o es muy corto
+                 }
+
+                 console.log("DOMContentLoaded: CVV introducido:", enteredCvv);
+
+                 // *** Pasar el CVV introducido Y los datos del usuario (incluyendo el CVV correcto simulado) a processPaymentSimulation ***
+                 if (!currentUserData) {
+                     console.error("DOMContentLoaded: Datos del usuario no disponibles para simulación de pago.");
+                      showMessage('Error: Datos de usuario no cargados.', 'error');
+                      return; // Detener si no tenemos los datos del usuario
+                 }
+
+
+                 try {
+                     // Llama a la función que simula el pago en payment.js, pasándole el CVV introducido y los datos del usuario
+                     await processPaymentSimulation(enteredCvv, currentUserData); // <-- Pasar ambos: CVV introducido y userData
+
+                     // Si la simulación de pago fue exitosa (la promesa se resolvió)
                      console.log("DOMContentLoaded: Simulación de pago completada exitosamente.");
-                     // Opcional: Redirigir a la sección de Mis Reservas o mostrar un mensaje final
-                     showMessage('Redirigiendo a Mis Reservas...', 'info'); // showMessage importada
-                     setTimeout(() => { // Pequeño retraso para que el mensaje se vea
+                     // Limpiar el campo de CVV después del intento de pago
+                     if (cvvInput) cvvInput.value = '';
+
+                     // Puedes redirigir a Mis Reservas automáticamente O dejar que el usuario haga clic en el menú.
+                     // Redirigir después de un pequeño retraso es un buen UX.
+                     showMessage('Redirigiendo a Mis Reservas...', 'info');
+                     setTimeout(() => {
                          showContentSection('reservations-section'); // Llama a la función definida en este archivo
-                     }, 1000);
+                     }, 1500); // Un poco más de tiempo para leer el mensaje
 
 
                  } catch (error) {
-                      // processPaymentSimulation ya muestra mensaje de error, aquí solo logeamos
+                      // processPaymentSimulation ya muestra mensaje de error si falla
                       console.error("DOMContentLoaded: Error manejado por listener del botón de Confirmar Pago:", error);
+                       // No limpiar el campo de CVV si falla, para que el usuario pueda corregir
                  }
              });
-              console.log("DOMContentLoaded: Event listener para botón Confirmar Pago configurado.");
          } else { console.warn("DOMContentLoaded: Botón Confirmar Pago con ID 'confirmPaymentButton' no encontrado."); }
-
-
-         // ... (configuración de listeners para otros elementos del dashboard si es necesario) ...
 
 
          // --- Mostrar la Sección Inicial del Dashboard ---
@@ -444,4 +615,5 @@ document.addEventListener('DOMContentLoaded', () => {
      // No hay lógica para isIndexPage aquí, eso está en index.js
 
      console.log("DOMContentLoaded: Dashboard script initialization finished.");
-});
+}); // <-- Este es el cierre correcto del DOMContentLoaded
+// NO DEBE HABER NADA MÁS AQUÍ EXCEPTO POSIBLEMENTE COMENTARIOS O ESPACIOS EN BLANCO.

@@ -1,9 +1,11 @@
+<!-- dashboard.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bus Ticket App - Dashboard</title>
+    <!-- Asegúrate de que la ruta a tu CSS es correcta -->
     <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
@@ -15,25 +17,34 @@
         <div class="dashboard-container">
 
             <aside class="sidebar">
-                <h2>Menú</h2>
+                <h2>Configuraci</h2>
                 <ul>
                     <li><a href="#" data-section="user-info-section">Info del usuario</a></li>
 					<li><a href="#" data-section="route-selection">Seleccionar ruta</a></li>
                     <li><a href="#" data-section="reservations-section">Mis reservas</a></li>
-                    <li id="pay-menu-link" style="display: none;"><a href="#" data-section="payment-section">Pago Pendiente</a></li>
+                    <!-- Opción de menú para 'Pago' si quieres que sea accesible desde el menú (oculto inicialmente) -->
+                    <!-- <li id="pay-menu-link" style="display: none;"><a href="#" data-section="payment-section">Pago Pendiente</a></li> -->
 					<li><a href="#" id="logout-link">Cerrar Sesión</a></li>
                 </ul>
             </aside>
 
 			<main class="main-content">
+                <!-- Sección de Información del Usuario -->
                 <div id="user-info-section" class="content-section" style="display: none;">
                     <h2>Información del Usuario</h2>
                     <p><strong>Nombre de usuario:</strong> <span id="user-info-username">Cargando...</span></p>
                     <p><strong>Email:</strong> <span id="user-info-email">Cargando...</span></p>
                     <p><strong>Token de acceso:</strong> <span id="user-info-token">No disponible</span></p>
+                    <!-- Mostrar datos de pago simulados aquí -->
+                    <h3>Datos de Pago Simulados</h3>
+                    <p><strong>Número de Tarjeta:</strong> <span id="user-info-card-number">Cargando...</span></p>
+                    <p><strong>Fecha Expiración:</strong> <span id="user-info-expiry-date">Cargando...</span></p>
+                    <p><strong>CVV:</strong> <span id="user-info-cvv">Cargando...</span></p>
+                    <!-- RECORDAR CVV PARA LA SIMULACIÓN -->
                 </div>
 
-                <div id="route-selection" class="content-section">
+                <!-- Sección de Selección de Ruta -->
+                <div id="route-selection" class="content-section" style="display: none;"> <!-- Oculto inicialmente -->
                      <h2>Selección de ruta y fecha</h2>
                     <select id="route"></select>
                     <input type="date" id="travel-date">
@@ -46,17 +57,22 @@
                     <div id="loading" style="display: none;">Cargando rutas...</div>
                 </div>
 
+                <!-- Sección de Selección de Asientos -->
                 <div id="seat-selection" class="content-section" style="display: none;">
                     <h2>Selecciona el asiento</h2>
                     <div id="seat-map"></div>
                     <div id="price-display">Total: €0</div>
-                    <button id="reserveButton">Reservar</button> 
-                    <div id="loading-payment" style="display: none;">Procesando reserva...</div> 
+                    <!-- Botón para iniciar la RESERVA (no el pago) -->
+                    <button id="reserveButton">Reservar</button>
+                    <div id="loading-reservation" style="display: none;">Procesando reserva...</div> <!-- ID más descriptivo -->
                 </div>
 
+                <!-- Sección de Pago (Simulado) -->
                 <div id="payment-section" class="content-section" style="display: none;">
                     <h2>Resumen de la Reserva y Pago</h2>
+                    <!-- Resumen de la reserva actual -->
                     <div id="reservation-summary">
+                        <h3>Resumen de la Reserva</h3>
                         <p>Ruta: <span id="summary-route"></span></p>
                         <p>Fecha: <span id="summary-date"></span></p>
                         <p>Horario: <span id="summary-schedule"></span></p>
@@ -64,22 +80,31 @@
                         <p>Total: <span id="summary-total"></span></p>
                     </div>
 
+                    <!-- Sección para los detalles de pago (simulados) -->
                     <div id="payment-details">
                         <h3>Detalles de Pago</h3>
-                        <input type="text" id="card-number" placeholder="Número de tarjeta (simulado)">
-                        <input type="text" id="expiry-date" placeholder="MM/AA (simulado)">
-                        <input type="text" id="cvv" placeholder="CVV (simulado)">
-                        <button id="confirmPaymentButton">Confirmar Pago</button> 
+                        <!-- Mostrar número de tarjeta y fecha de expiración del usuario -->
+                        <p><strong>Número de Tarjeta:</strong> <span id="payment-card-number"></span></p>
+                        <p><strong>Fecha Expiración:</strong> <span id="payment-expiry-date"></span></p>
+                        <!-- Campo para que el usuario introduzca el CVV simulado -->
+                        <label for="cvv-input">CVV:</label>
+                        <input type="text" id="cvv-input" placeholder="CVV" maxlength="3"> <!-- CVV suele ser 3 dígitos -->
+
+                        <button id="confirmPaymentButton">Confirmar Pago</button>
                     </div>
-                     <div id="loading-payment-simulation" style="display: none;">Procesando pago...</div>
-                </div>
+					<div id="loading-payment-simulation" style="display: none; text-align: center; padding: 20px;">
+						<div class="spinner"></div>
+						<p>Procesando pago...</p>
+					</div>
+				</div>
 
-
+                <!-- Sección de Mis Reservas -->
                 <div id="reservations-section" class="content-section" style="display: none;">
                     <h2>Mis Reservas</h2>
                     <p>Aquí se listarán las reservas del usuario.</p>
-                    {/* Placeholder para la lista de reservas */}
+                    <!-- Contenedor donde se listarán las reservas -->
                     <div id="reservations-list"></div>
+                    <div id="loading-reservations" style="display: none;">Cargando reservas...</div> <!-- Spinner para esta sección -->
                 </div>
 
 
@@ -87,11 +112,12 @@
         </div> <div id="custom-message" class="custom-message"></div>
 
     </div>
+    <!-- Asegúrate de que la ruta a tus módulos JS es correcta -->
     <script src="/js/ui.js" type="module"></script>
     <script src="/js/auth.js" type="module"></script>
     <script src="/js/routes.js" type="module"></script>
     <script src="/js/booking.js" type="module"></script>
-    <script src="/js/payment.js" type="module"></script>
+    <script src="/js/payment.js" type="module"></script> <!-- Este archivo manejará la simulación de pago -->
     <script src="/js/dashboard.js" type="module"></script>
 </body>
 </html>
